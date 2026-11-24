@@ -45,8 +45,9 @@ img { width: 19mm; } p { margin: 0; } .copyright { font-size: 6.5pt; margin-top:
 // Options controls the text and artwork for an A4 report. MarginTwips applies
 // to the body and running page bands. Use a 19.05 mm margin by leaving it
 // zero. ContentsTitle enables a linked list of headings after the cover.
-// Introduction and Opening flow before the first body block. Closing starts
-// on a new page. None of these supplements adds an entry to the contents.
+// Opening precedes the contents on its own page and its headings are linked
+// from the contents. Introduction flows with the first body block. Closing
+// starts on a new page after the body without adding contents entries.
 type Options struct {
 	Title, ContentsTitle, Introduction string
 	MarginTwips                        int
@@ -94,28 +95,40 @@ func (d *Document) Source(options Options) publication.Source {
 	if options.Footer != nil {
 		layout.FooterHTML = footerHTML(*options.Footer)
 	}
-	pages := make([]htmlpdf.Page, 0, 3)
-	if options.ContentsTitle != "" && len(d.headings) > 0 {
-		pages = append(pages, htmlpdf.Page{HTML: htmlDocument(portableStyles, d.contents(options.ContentsTitle)), ExcludeFromOutline: true})
+	pages := make([]htmlpdf.Page, 0, 4+len(d.bodyParts))
+	opening, openingHeadings := sectionHTML(options.Opening, "portable-opening")
+	if opening != "" {
+		pages = append(pages, htmlpdf.Page{HTML: htmlDocument(portableStyles, opening)})
+	}
+	if options.ContentsTitle != "" && len(openingHeadings)+len(d.headings) > 0 {
+		markup := d.contents(options.ContentsTitle, openingHeadings)
+		pages = append(pages, htmlpdf.Page{HTML: htmlDocument(portableStyles, markup), ExcludeFromOutline: true})
 	}
 	var introduction string
 	if options.Introduction != "" {
 		introduction = "<p>" + textHTML(options.Introduction) + "</p>"
 	}
-	body := introduction + sectionHTML(options.Opening) + d.body.String()
-	pages = append(pages, htmlpdf.Page{HTML: htmlDocument(portableStyles, body)})
-	if closing := sectionHTML(options.Closing); closing != "" {
+	for _, part := range d.bodyParts {
+		pages = append(pages, htmlpdf.Page{HTML: htmlDocument(portableStyles, introduction+part)})
+		introduction = ""
+	}
+	if last := introduction + d.body.String(); last != "" || len(pages) == 0 {
+		pages = append(pages, htmlpdf.Page{HTML: htmlDocument(portableStyles, last)})
+	}
+	if closing, _ := sectionHTML(options.Closing, ""); closing != "" {
 		pages = append(pages, htmlpdf.Page{HTML: htmlDocument(portableStyles, closing), ExcludeFromOutline: true})
 	}
 	return htmlpdf.NewLayout(pages, layout)
 }
 
-func (d *Document) contents(title string) string {
+func (d *Document) contents(title string, opening []heading) string {
 	var contents strings.Builder
 	fmt.Fprintf(&contents, "<h1>%s</h1>", textHTML(title))
-	for _, h := range d.headings {
-		fmt.Fprintf(&contents, `<p style="margin-left:%dpt"><a href="#%s">%s</a></p>`,
-			(h.level-1)*11, anchor(h.id), textHTML(h.text))
+	for _, headings := range [][]heading{opening, d.headings} {
+		for _, h := range headings {
+			fmt.Fprintf(&contents, `<p style="margin-left:%dpt"><a href="#%s">%s</a></p>`,
+				(h.level-1)*11, anchor(h.id), textHTML(h.text))
+		}
 	}
 	return contents.String()
 }
