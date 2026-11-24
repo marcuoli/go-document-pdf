@@ -4,7 +4,7 @@ go 1.27.4
 
 require (
 	github.com/chinmay-sawant/gowkhtmltopdf v0.2.6
-	github.com/marcuoli/go-document-docx v0.10.0
+	github.com/marcuoli/go-document-docx v0.11.0
 )
 
 require (

@@ -1,7 +1,7 @@
 # go-document-pdf
 
 Publish a PDF from a native Windows Word export source or a portable Go renderer.
-The caller owns report content and routing. PDF publication is independent of
+The caller supplies content and artwork. The package selects the renderer. PDF publication is independent of
 DOCX field refresh.
 
 ```go
@@ -25,3 +25,35 @@ destinations and TOC. Use licensed fonts covering the characters in your report.
 The package uses gowkhtmltopdf for HTML layout and the shared document publication
 transaction for installation. The Word adapter is supplied by the caller so the
 existing DOCX Word SDK can own all Office automation.
+
+## Structured reports
+
+Build a portable document with the same table and text-run types used by
+go-document-docx. The PDF package escapes the text, applies the selected
+column widths and renders links, the cover and running page bands.
+
+```go
+var body report.Document
+body.BookmarkNext("Summary")
+body.Heading("Summary", 1)
+body.AddTable(document.Table{
+    Headers: []string{"Property", "Value"},
+    Widths:  []int{3600, 6000}, // Twips, matching the Word table model.
+    Rows:    [][]document.Cell{{{Text: "Region"}, {Text: "West"}}},
+})
+portable := body.Source(report.Options{
+    Title:         "Assessment",
+    ContentsTitle: "Contents",
+    Cover:         &report.Cover{Subtitle: "Quarterly review"},
+    Footer:        &report.Footer{Label: "Technical Brief", Text: "Assessment"},
+})
+receipt, err := pdf.SaveFromDOCX(ctx, pdfPath, docxPath, docxReceipt, portable, false)
+```
+
+Import `github.com/marcuoli/go-document-pdf/report` as `report` and
+`github.com/marcuoli/go-document-docx/document` as `document`.
+Supply caller-owned PNGs in the cover, header and footer options when needed.
+The structured contents follows the cover and links to report sections.
+`SaveFromDOCX` verifies the published DOCX bytes staged for Word. The Office
+automation continues to use the shared Word adapter. PDFs can be published
+independently of any DOCX field-refresh operation.

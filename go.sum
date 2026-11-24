@@ -44,8 +44,8 @@ github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 h1:DACJavvAHhabrF0
 github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0/go.mod h1:E/TSTwGwJL78qG/PmXZO1EjYhfJinVAhrmmHX6Z8B9k=
 github.com/marcuoli/go-atomicfile v0.1.1 h1:tWCXTirhcRkky3zB8ySvSbTbHq1wB2YmuVPEfNC0Bqg=
 github.com/marcuoli/go-atomicfile v0.1.1/go.mod h1:oxyzkV7nhNJDK/Ayjon2jnCg73CcW//QXeGfAJKkhSU=
-github.com/marcuoli/go-document-docx v0.10.0 h1:p65xmRgTN9mQEG1S3ZpbuctdbUkFhLvE1SXoIMkuy68=
-github.com/marcuoli/go-document-docx v0.10.0/go.mod h1:qq6DYcKhr2Bk7cx+kMt9L3NvtiNJFL4NzpBCZqqarKQ=
+github.com/marcuoli/go-document-docx v0.11.0 h1:zz1148mzAeccnKPP0YlBdKEl1KzfWg8xnGQOxcq9moc=
+github.com/marcuoli/go-document-docx v0.11.0/go.mod h1:qq6DYcKhr2Bk7cx+kMt9L3NvtiNJFL4NzpBCZqqarKQ=
 github.com/mmonterroca/docxgo/v2 v2.16.0 h1:IqiSGU3CuiELIC6SaKwcceSIqWV19myHMtDGhZP1pZw=
 github.com/mmonterroca/docxgo/v2 v2.16.0/go.mod h1:Yc3h7M+sssxGMz51qQ8EHbfDb2NyleLbS+lZLH9Y0us=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 h1:Jamvg5psRIccs7FGNTlIRMkT8wgtp5eCXdBlqhYGL6U=
