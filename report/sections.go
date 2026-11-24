@@ -1,6 +1,7 @@
 package report
 
 import (
+	"fmt"
 	"html"
 	"net/url"
 	"strings"
@@ -20,11 +21,19 @@ type TextRun struct {
 	URL  string
 }
 
-func sectionHTML(sections []Section) string {
+func sectionHTML(sections []Section, anchorPrefix string) (string, []heading) {
 	var out strings.Builder
+	var headings []heading
 	for _, section := range sections {
 		if section.Heading != "" {
-			out.WriteString("<h2>" + textHTML(section.Heading) + "</h2>")
+			text := textHTML(section.Heading)
+			if anchorPrefix == "" {
+				out.WriteString("<h2>" + text + "</h2>")
+			} else {
+				id := fmt.Sprintf("%s-%d", anchorPrefix, len(headings)+1)
+				headings = append(headings, heading{text: section.Heading, id: id, level: 1})
+				fmt.Fprintf(&out, `<h2 id="%s">%s</h2>`, anchor(id), text)
+			}
 		}
 		for _, paragraph := range section.Paragraphs {
 			if len(paragraph) == 0 {
@@ -41,7 +50,7 @@ func sectionHTML(sections []Section) string {
 			out.WriteString("</p>")
 		}
 	}
-	return out.String()
+	return out.String(), headings
 }
 
 func allowsExternalLink(address string) bool {

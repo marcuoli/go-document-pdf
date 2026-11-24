@@ -53,10 +53,11 @@ receipt, err := pdf.SaveFromDOCX(ctx, pdfPath, docxPath, docxReceipt, portable, 
 Import `github.com/marcuoli/go-document-pdf/report` as `report` and
 `github.com/marcuoli/go-document-docx/document` as `document`.
 Supply caller-owned PNGs in the cover, header and footer options when needed.
-The structured contents follows the cover and links to report sections.
-Use `Options.Opening` to put introductory sections above the first body block
-and `Options.Closing` to start a new page after the body. Sections support
-paragraphs and external HTTP, HTTPS and mail links.
+The structured contents follows the cover and any opening sections, and links
+to the opening and report headings. Use `Options.Opening` for introductory
+sections, `Document.PageBreak` to start a new body page, and `Options.Closing`
+for a separate closing page. Sections support paragraphs and external HTTP,
+HTTPS and mail links.
 `SaveFromDOCX` verifies the published DOCX bytes staged for Word. The Office
 automation continues to use the shared Word adapter. PDFs can be published
 independently of any DOCX field-refresh operation.

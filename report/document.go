@@ -15,6 +15,7 @@ import (
 type Document struct {
 	headings  []heading
 	body      strings.Builder
+	bodyParts []string
 	bookmarks []string
 	err       error
 }
@@ -51,6 +52,15 @@ func (d *Document) Heading(text string, level int) {
 	}
 	d.headings = append(d.headings, heading{text, id, level})
 	d.paragraph("h"+strconv.Itoa(level), "", text)
+}
+
+// PageBreak starts the next report block on a fresh page. Repeated breaks
+// and a break after the final block do not produce empty pages.
+func (d *Document) PageBreak() {
+	if d.body.Len() != 0 {
+		d.bodyParts = append(d.bodyParts, d.body.String())
+		d.body.Reset()
+	}
 }
 
 // Paragraph appends escaped text, preserving line breaks.
