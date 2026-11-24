@@ -45,13 +45,15 @@ img { width: 19mm; } p { margin: 0; } .copyright { font-size: 6.5pt; margin-top:
 // Options controls the text and artwork for an A4 report. MarginTwips applies
 // to the body and running page bands. Use a 19.05 mm margin by leaving it
 // zero. ContentsTitle enables a linked list of headings after the cover.
-// Introduction, when present, is printed above the first body block.
+// Introduction and Opening flow before the first body block. Closing starts
+// on a new page. None of these supplements adds an entry to the contents.
 type Options struct {
 	Title, ContentsTitle, Introduction string
 	MarginTwips                        int
 	Cover                              *Cover
 	HeaderImagePNG                     []byte
 	Footer                             *Footer
+	Opening, Closing                   []Section
 }
 
 // Cover supplies the subtitle and two groups of metadata shown below the cover
@@ -92,7 +94,7 @@ func (d *Document) Source(options Options) publication.Source {
 	if options.Footer != nil {
 		layout.FooterHTML = footerHTML(*options.Footer)
 	}
-	pages := make([]htmlpdf.Page, 0, 2)
+	pages := make([]htmlpdf.Page, 0, 3)
 	if options.ContentsTitle != "" && len(d.headings) > 0 {
 		pages = append(pages, htmlpdf.Page{HTML: htmlDocument(portableStyles, d.contents(options.ContentsTitle)), ExcludeFromOutline: true})
 	}
@@ -100,7 +102,11 @@ func (d *Document) Source(options Options) publication.Source {
 	if options.Introduction != "" {
 		introduction = "<p>" + textHTML(options.Introduction) + "</p>"
 	}
-	pages = append(pages, htmlpdf.Page{HTML: htmlDocument(portableStyles, introduction+d.body.String())})
+	body := introduction + sectionHTML(options.Opening) + d.body.String()
+	pages = append(pages, htmlpdf.Page{HTML: htmlDocument(portableStyles, body)})
+	if closing := sectionHTML(options.Closing); closing != "" {
+		pages = append(pages, htmlpdf.Page{HTML: htmlDocument(portableStyles, closing), ExcludeFromOutline: true})
+	}
 	return htmlpdf.NewLayout(pages, layout)
 }
 
