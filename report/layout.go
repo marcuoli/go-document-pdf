@@ -207,6 +207,10 @@ func centeredCoverLogoHTML(logo *CoverLogo) (string, error) {
 	w, h := float64(aspectWidth), float64(aspectHeight)
 	scale := math.Min(logo.MaxWidthMM/w, logo.MaxHeightMM/h)
 	width, height := w*scale, h*scale
+	// Values round to six decimal places in the cover markup.
+	if width <= 0.0000005 || height <= 0.0000005 {
+		return "", errors.New("centered cover logo is below the layout precision")
+	}
 	if height > heightMM-logo.TopMM {
 		return "", errors.New("centered cover logo extends below the A4 cover")
 	}

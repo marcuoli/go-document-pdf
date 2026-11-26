@@ -86,6 +86,7 @@ func TestCenteredCoverLogoInvalidInputFailsWrite(t *testing.T) {
 		{"not PNG", CoverLogo{PNG: []byte("invalid"), TopMM: 67.2, MaxWidthMM: 30, MaxHeightMM: 30}},
 		{"partial aspect", CoverLogo{PNG: valid, MaxWidthMM: 30, MaxHeightMM: 30, AspectWidth: 30}},
 		{"negative aspect", CoverLogo{PNG: valid, MaxWidthMM: 30, MaxHeightMM: 30, AspectWidth: -2, AspectHeight: 1}},
+		{"rounded to zero", CoverLogo{PNG: valid, MaxWidthMM: 30, MaxHeightMM: 30, AspectWidth: 100_000_000, AspectHeight: 1}},
 		{"zero bound", CoverLogo{PNG: valid, MaxHeightMM: 30}},
 		{"infinite bound", CoverLogo{PNG: valid, MaxWidthMM: math.Inf(1), MaxHeightMM: 30}},
 		{"NaN top", CoverLogo{PNG: valid, TopMM: math.NaN(), MaxWidthMM: 30, MaxHeightMM: 30}},
