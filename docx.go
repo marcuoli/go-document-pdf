@@ -12,7 +12,6 @@ import (
 	"strings"
 
 	"github.com/marcuoli/go-document-docx/publication"
-	"github.com/marcuoli/go-document-docx/word"
 )
 
 // SaveFromDOCX publishes a PDF at outputPath. On Windows it exports the DOCX
@@ -40,7 +39,7 @@ func SaveFromDOCX(ctx context.Context, outputPath, docxPath string, receipt publ
 	}
 	document := finalizedDOCX{path: input, receipt: receipt}
 	directory := filepath.Dir(output)
-	source := word.PDF(document, word.Options{TemporaryDirectory: directory})
+	source := wordNoteSource{document: document, directory: directory}
 	if portable != nil {
 		portable = portableDOCX{Source: portable, document: document, directory: directory}
 	}

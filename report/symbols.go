@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/marcuoli/go-document-pdf/htmlpdf"
+	"github.com/marcuoli/go-document-pdf/internal/notes"
 	"github.com/marcuoli/go-document-pdf/internal/reportfonts"
 )
 
@@ -39,6 +40,7 @@ var reportMarks = func() *strings.Replacer {
 type portableSource struct {
 	pages  []htmlpdf.Page
 	layout htmlpdf.Layout
+	notes  notes.Set
 }
 
 func (s portableSource) Write(ctx context.Context, w io.Writer) error {
@@ -58,7 +60,7 @@ func (s portableSource) Write(ctx context.Context, w io.Writer) error {
 		for index := range pages {
 			pages[index].HTML = style(pages[index].HTML)
 		}
-		return htmlpdf.NewLayout(pages, layout).Write(ctx, w)
+		return s.notes.Render(ctx, w, htmlpdf.NewLayout(pages, layout), faces.Directory)
 	})
 }
 

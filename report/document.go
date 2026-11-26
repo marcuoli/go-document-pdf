@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/marcuoli/go-document-docx/document"
+	"github.com/marcuoli/go-document-pdf/internal/notes"
 )
 
 // Document accumulates report blocks. Its zero value is ready to use. The
@@ -17,6 +18,7 @@ type Document struct {
 	body      strings.Builder
 	bodyParts []string
 	bookmarks []string
+	notes     notes.Set
 	err       error
 }
 
@@ -167,8 +169,12 @@ func (d *Document) cell(cell document.Cell) {
 		d.body.WriteString(` style="text-align:` + cell.Alignment + `"`)
 	}
 	d.body.WriteString(">")
-	if cell.LinkTarget != "" {
-		d.body.WriteString(`<a href="#` + anchor(cell.LinkTarget) + `">`)
+	link := cell.LinkTarget
+	if link != "" {
+		d.body.WriteString(`<a href="#` + anchor(link) + `">`)
+	} else if cell.ScreenTip != "" && (strings.TrimSpace(cell.Text) != "" || len(cell.Runs) > 0) {
+		link = d.notes.Add(cell.ScreenTip)
+		d.body.WriteString(`<a class="pdf-note" href="` + link + `">`)
 	}
 	if cell.Bold {
 		d.body.WriteString("<strong>")
@@ -186,7 +192,7 @@ func (d *Document) cell(cell document.Cell) {
 	if cell.Bold {
 		d.body.WriteString("</strong>")
 	}
-	if cell.LinkTarget != "" {
+	if link != "" {
 		d.body.WriteString("</a>")
 	}
 	d.body.WriteString("</td>")

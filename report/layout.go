@@ -20,7 +20,7 @@ table { width: 100%; table-layout: fixed; border-collapse: collapse; margin-bott
 th, td { border: 0.5pt solid #000; padding: 1pt 2.5pt; vertical-align: middle; white-space: pre-wrap; overflow-wrap: break-word; }
 th { color: #fff; background-color: #000; text-align: left; }
 thead { display: table-header-group; }
-a { color: #235865; }
+a { color: #235865; } a.pdf-note { color: inherit; text-decoration: none; }
 td.difference { background-color: #fff0d6; } td.unavailable { background-color: #f2f2f2; }
 pre { margin: 0; white-space: pre-wrap; overflow-wrap: break-word; font-size: 8pt; }`
 
@@ -118,7 +118,7 @@ func (d *Document) Source(options Options) publication.Source {
 	if closing, _ := sectionHTML(options.Closing, ""); closing != "" {
 		pages = append(pages, htmlpdf.Page{HTML: htmlDocument(portableStyles, closing), ExcludeFromOutline: true})
 	}
-	return portableSource{pages: pages, layout: layout}
+	return portableSource{pages: pages, layout: layout, notes: d.notes.Clone()}
 }
 
 func (d *Document) contents(title string, opening []heading) string {

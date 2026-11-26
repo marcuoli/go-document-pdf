@@ -65,3 +65,8 @@ source uses Segoe UI Symbol for arrows, checks and crosses, and Segoe UI
 Emoji for warnings, when the matching regular faces are embedded in the
 published DOCX. The portable PDF uses the warning glyph's outline and the
 report's text color. Missing faces use the renderer's default fonts.
+
+Structured table cells with standalone ScreenTips produce native PDF pop-up
+notes alongside their rendered text. The PDF reader controls how notes open.
+Word export prepares the generated cell links in a private copy, so the DOCX
+keeps its ScreenTips. Explicit navigation links keep their destinations.
