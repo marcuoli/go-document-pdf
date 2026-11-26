@@ -53,6 +53,9 @@ receipt, err := pdf.SaveFromDOCX(ctx, pdfPath, docxPath, docxReceipt, portable, 
 Import `github.com/marcuoli/go-document-pdf/report` as `report` and
 `github.com/marcuoli/go-document-docx/document` as `document`.
 Supply caller-owned PNGs in the cover, header and footer options when needed.
+Set `Cover.CenteredLogo` to place a second PNG at the page centerline with a
+caller-supplied top position and maximum width and height in millimeters.
+The image is scaled to fit its bounds with its original aspect ratio.
 The structured contents follows the cover and any opening sections, and links
 to the opening and report headings. Use `Options.Opening` for introductory
 sections, `Document.PageBreak` to start a new body page, and `Options.Closing`

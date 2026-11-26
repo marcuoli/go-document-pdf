@@ -1,11 +1,15 @@
 package report
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"html"
+	"image/png"
 	"io"
+	"math"
 	"strings"
 
 	"github.com/marcuoli/go-document-docx/publication"
@@ -58,12 +62,25 @@ type Options struct {
 }
 
 // Cover supplies the subtitle and two groups of metadata shown below the cover
-// heading. LogoPNG and TrimPNG supply optional logo and left-edge artwork.
+// heading. LogoPNG and TrimPNG supply optional upper-left logo and trim artwork.
+// CenteredLogo adds an independent mark centered on the physical cover.
 type Cover struct {
 	Subtitle          string
 	Details, Metadata []string
 	LogoPNG, TrimPNG  []byte
 	LogoAlt           string
+	CenteredLogo      *CoverLogo
+}
+
+// CoverLogo places a second PNG in a caller-sized box. TopMM is measured
+// from the top of the A4 page. The image keeps its aspect ratio and fits
+// within MaxWidthMM and MaxHeightMM. Alt describes the image. The PNG may
+// contain up to 32 MiB and 16 Mi pixels, with a limit of 16,384 per side.
+type CoverLogo struct {
+	PNG                     []byte
+	Alt                     string
+	TopMM                   float64
+	MaxWidthMM, MaxHeightMM float64
 }
 
 // Footer supplies the label and two lines of text for numbered pages.
@@ -86,7 +103,11 @@ func (d *Document) Source(options Options) publication.Source {
 	}
 	layout := htmlpdf.Layout{Title: options.Title, MarginMM: float64(margin) * 25.4 / 1440, FooterSpacingMM: 10}
 	if options.Cover != nil {
-		layout.CoverHTML = coverHTML(options.Title, *options.Cover)
+		cover, err := coverHTML(options.Title, *options.Cover)
+		if err != nil {
+			return failedSource{err}
+		}
+		layout.CoverHTML = cover
 	}
 	if len(options.HeaderImagePNG) != 0 {
 		headerCSS := fmt.Sprintf(`body {margin: 0;} img {display: block; width: 210mm; height: 5.6mm; margin-left: -%.4fmm;}`, layout.MarginMM)
@@ -133,14 +154,54 @@ func (d *Document) contents(title string, opening []heading) string {
 	return contents.String()
 }
 
-func coverHTML(title string, cover Cover) []byte {
+func coverHTML(title string, cover Cover) ([]byte, error) {
+	centered, err := centeredCoverLogoHTML(cover.CenteredLogo)
+	if err != nil {
+		return nil, err
+	}
 	markup := fmt.Sprintf(`<div class="cover">
-<div class="cover-band">%s</div><div class="cover-logo">%s</div>
+<div class="cover-band">%s</div><div class="cover-logo">%s</div>%s
 <div class="cover-copy"><div class="cover-heading"><p>%s</p><p>%s</p></div>
 <div class="cover-meta"><div class="cover-rule"></div><div class="cover-details">%s</div>%s</div></div></div>`,
-		imageHTML(cover.TrimPNG, ""), imageHTML(cover.LogoPNG, cover.LogoAlt),
+		imageHTML(cover.TrimPNG, ""), imageHTML(cover.LogoPNG, cover.LogoAlt), centered,
 		textHTML(title), textHTML(cover.Subtitle), paragraphs(cover.Details), paragraphs(cover.Metadata))
-	return htmlDocument(portableCoverStyles, markup)
+	return htmlDocument(portableCoverStyles, markup), nil
+}
+
+func centeredCoverLogoHTML(logo *CoverLogo) (string, error) {
+	if logo == nil {
+		return "", nil
+	}
+	const widthMM, heightMM = 210, 297
+	if !(logo.TopMM >= 0 && logo.TopMM < heightMM &&
+		logo.MaxWidthMM > 0 && logo.MaxWidthMM <= widthMM &&
+		logo.MaxHeightMM > 0 && logo.MaxHeightMM <= heightMM) {
+		return "", errors.New("centered cover logo has invalid A4 dimensions")
+	}
+	// Match the renderer's image bounds before allocating decoded pixels.
+	const maxPNGBytes, maxPNGSide, maxPNGPixels = 32 << 20, 16_384, 16 << 20
+	if len(logo.PNG) > maxPNGBytes {
+		return "", errors.New("centered cover logo exceeds the PNG byte limit")
+	}
+	config, err := png.DecodeConfig(bytes.NewReader(logo.PNG))
+	if err != nil {
+		return "", fmt.Errorf("read centered cover logo: %w", err)
+	}
+	if config.Width > maxPNGSide || config.Height > maxPNGSide || int64(config.Width)*int64(config.Height) > maxPNGPixels {
+		return "", errors.New("centered cover logo exceeds the PNG pixel limit")
+	}
+	if _, err := png.Decode(bytes.NewReader(logo.PNG)); err != nil {
+		return "", fmt.Errorf("decode centered cover logo: %w", err)
+	}
+	pixelWidth, pixelHeight := float64(config.Width), float64(config.Height)
+	scale := math.Min(logo.MaxWidthMM/pixelWidth, logo.MaxHeightMM/pixelHeight)
+	width, height := pixelWidth*scale, pixelHeight*scale
+	if height > heightMM-logo.TopMM {
+		return "", errors.New("centered cover logo extends below the A4 cover")
+	}
+	// The renderer places absolute offsets on the wrapper and sizes the PNG independently.
+	return fmt.Sprintf(`<div class="cover-centered-logo" style="position:absolute;left:%.6fmm;top:%.6fmm"><img style="display:block;width:%.6fmm;height:%.6fmm" src="data:image/png;base64,%s" alt="%s"></div>`,
+		(widthMM-width)/2, logo.TopMM, width, height, base64.StdEncoding.EncodeToString(logo.PNG), html.EscapeString(logo.Alt)), nil
 }
 
 func footerHTML(footer Footer) []byte {
