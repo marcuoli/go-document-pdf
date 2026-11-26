@@ -16,7 +16,7 @@ import (
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model"
 )
 
-func TestNativeWordNotesAfterFieldRefresh(t *testing.T) {
+func TestNativeWordPDFOmitsScreenTipsAfterFieldRefresh(t *testing.T) {
 	if os.Getenv("DOCX_WORD_INTEGRATION") != "1" {
 		t.Skip("explicit desktop Word integration opt-in required")
 	}
@@ -26,10 +26,12 @@ func TestNativeWordNotesAfterFieldRefresh(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	doc.BookmarkNext("status")
 	doc.Heading("Status", 1)
 	const tip = "Ação necessária"
 	doc.AddTable(document.Table{Headers: []string{"Result"}, Widths: []int{4000}, Rows: [][]document.Cell{
 		{{Text: "Review", ScreenTip: tip}},
+		{{Text: "See status", LinkTarget: "status"}},
 	}})
 	input, output := filepath.Join(dir, "source.docx"), filepath.Join(dir, "report.pdf")
 	receipt, err := publication.Save(ctx, input, false, word.WithUpdatedFields(doc, word.Options{TemporaryDirectory: dir}))
@@ -60,7 +62,7 @@ func TestNativeWordNotesAfterFieldRefresh(t *testing.T) {
 	if err := pdf.EnsurePageCount(); err != nil {
 		t.Fatal(err)
 	}
-	count := 0
+	links := 0
 	for i := 1; i <= pdf.PageCount; i++ {
 		page, _, _, err := pdf.PageDict(ctx, i, false)
 		if err != nil {
@@ -75,16 +77,14 @@ func TestNativeWordNotesAfterFieldRefresh(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if kind := annotation.NameEntry("Subtype"); kind != nil && *kind == "Square" {
-				text, err := annotation.StringOrHexLiteralEntry("Contents")
-				if err != nil || text == nil || *text != tip {
-					t.Fatal("native note did not keep the original explanation", err)
-				}
-				count++
+			kind := annotation.NameEntry("Subtype")
+			if kind == nil || *kind != "Link" {
+				t.Fatalf("expected only navigation links, got %v", annotation)
 			}
+			links++
 		}
 	}
-	if count != 1 {
-		t.Fatalf("native Word emitted %d notes, want one after field refresh", count)
+	if links != 1 {
+		t.Fatalf("native Word emitted %d links, want only the authored navigation link", links)
 	}
 }

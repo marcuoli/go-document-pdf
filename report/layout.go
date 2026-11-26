@@ -118,7 +118,7 @@ func (d *Document) Source(options Options) publication.Source {
 	if closing, _ := sectionHTML(options.Closing, ""); closing != "" {
 		pages = append(pages, htmlpdf.Page{HTML: htmlDocument(portableStyles, closing), ExcludeFromOutline: true})
 	}
-	return portableSource{pages: pages, layout: layout, notes: d.notes.Clone()}
+	return portableSource{pages: pages, layout: layout}
 }
 
 func (d *Document) contents(title string, opening []heading) string {

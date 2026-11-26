@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/marcuoli/go-document-docx/document"
-	"github.com/marcuoli/go-document-pdf/internal/notes"
 )
 
 // Document accumulates report blocks. Its zero value is ready to use. The
@@ -18,7 +17,6 @@ type Document struct {
 	body      strings.Builder
 	bodyParts []string
 	bookmarks []string
-	notes     notes.Set
 	err       error
 }
 
@@ -190,11 +188,6 @@ func (d *Document) cell(cell document.Cell) {
 	}
 	if cell.LinkTarget != "" {
 		d.body.WriteString("</a>")
-	} else if cell.ScreenTip != "" && (strings.TrimSpace(cell.Text) != "" || len(cell.Runs) > 0) {
-		// Use an adjacent transparent image as the position marker. The
-		// layout engine underlines linked text even with text-decoration:none.
-		const pixel = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgYGBgAAAABQABpfZFQAAAAABJRU5ErkJggg=="
-		d.body.WriteString(`<a href="` + d.notes.Add(cell.ScreenTip) + `"><img alt="" style="width:1pt;height:7pt;vertical-align:middle" src="data:image/png;base64,` + pixel + `"></a>`)
 	}
 	d.body.WriteString("</td>")
 }

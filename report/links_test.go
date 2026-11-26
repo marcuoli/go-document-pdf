@@ -10,13 +10,12 @@ import (
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model"
 )
 
-func TestReportScreenTipNotes(t *testing.T) {
+func TestReportOmitsStatusScreenTips(t *testing.T) {
 	var report Document
 	report.BookmarkNext("status")
 	report.Heading("Status", 1)
-	const explanation = "Ação necessária (校正) & investigação"
 	report.AddTable(document.Table{Headers: []string{"Result"}, Widths: []int{4000}, Rows: [][]document.Cell{
-		{{Runs: []document.CellRun{{Text: "!", TextColor: "000000"}, {Text: "?", TextColor: "AF2900"}}, ScreenTip: explanation}},
+		{{Runs: []document.CellRun{{Text: "!", TextColor: "000000"}, {Text: "?", TextColor: "AF2900"}}, ScreenTip: "Ação necessária (校正) & investigação"}},
 		{{Text: "See status", LinkTarget: "status", ScreenTip: "Existing navigation"}},
 	}})
 	source := report.Source(Options{ContentsTitle: "Contents"})
@@ -31,7 +30,7 @@ func TestReportScreenTipNotes(t *testing.T) {
 	if err := pdf.EnsurePageCount(); err != nil {
 		t.Fatal(err)
 	}
-	var notes, links int
+	links := 0
 	for i := 1; i <= pdf.PageCount; i++ {
 		page, _, _, err := pdf.PageDict(t.Context(), i, false)
 		if err != nil {
@@ -46,22 +45,14 @@ func TestReportScreenTipNotes(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if kind := annotation.NameEntry("Subtype"); kind != nil {
-				switch *kind {
-				case "Square":
-					notes++
-					text, err := annotation.StringOrHexLiteralEntry("Contents")
-					appearance, appearanceErr := pdf.DereferenceDict(annotation["AP"])
-					if err != nil || text == nil || *text != explanation || annotation["A"] != nil || appearanceErr != nil || appearance["N"] == nil {
-						t.Fatalf("wrong note contents or action: %v, %v", text, err)
-					}
-				case "Link":
-					links++
-				}
+			kind := annotation.NameEntry("Subtype")
+			if kind == nil || *kind != "Link" {
+				t.Fatalf("expected only navigation links, got %v", annotation)
 			}
+			links++
 		}
 	}
-	if notes != 1 || links < 2 || strings.Contains(output.String(), "pdf-note.invalid") {
-		t.Fatalf("notes=%d, regular links=%d; expected one note and retained navigation with no marker URL", notes, links)
+	if links != 2 || strings.Contains(output.String(), "pdf-note.invalid") {
+		t.Fatalf("got %d links, want only the contents and authored links", links)
 	}
 }
