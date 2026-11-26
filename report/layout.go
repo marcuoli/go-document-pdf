@@ -20,7 +20,7 @@ table { width: 100%; table-layout: fixed; border-collapse: collapse; margin-bott
 th, td { border: 0.5pt solid #000; padding: 1pt 2.5pt; vertical-align: middle; white-space: pre-wrap; overflow-wrap: break-word; }
 th { color: #fff; background-color: #000; text-align: left; }
 thead { display: table-header-group; }
-a { color: #235865; } a.pdf-note { color: inherit; text-decoration: none; }
+a { color: #235865; }
 td.difference { background-color: #fff0d6; } td.unavailable { background-color: #f2f2f2; }
 pre { margin: 0; white-space: pre-wrap; overflow-wrap: break-word; font-size: 8pt; }`
 
