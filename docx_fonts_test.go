@@ -3,7 +3,9 @@ package pdf
 import (
 	"archive/zip"
 	"bytes"
+	"context"
 	"errors"
+	"io"
 	"os"
 	"path/filepath"
 	"testing"
@@ -11,6 +13,43 @@ import (
 	"github.com/marcuoli/go-document-docx/publication"
 	"github.com/marcuoli/go-document-pdf/internal/reportfonts"
 )
+
+func TestSavePortableFromDOCXUsesVerifiedFontsAndPreservesExistingPDF(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	input, output := filepath.Join(dir, "report.docx"), filepath.Join(dir, "report.pdf")
+	var docx bytes.Buffer
+	if err := zip.NewWriter(&docx).Close(); err != nil {
+		t.Fatal(err)
+	}
+	receipt, err := publication.Save(t.Context(), input, false, publication.FromBytes(docx.Bytes()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	portable := sourceFunc(func(ctx context.Context, w io.Writer) error {
+		return reportfonts.Render(ctx, func(reportfonts.Faces) error {
+			_, err := io.WriteString(w, "portable PDF")
+			return err
+		})
+	})
+	published, err := SavePortableFromDOCX(t.Context(), output, input, receipt, portable, false)
+	if err != nil || !published.Installed || published.Backend != Portable {
+		t.Fatalf("portable install: %+v, %v", published, err)
+	}
+
+	// A same-size substitution must fail during font staging, before render.
+	if err := os.WriteFile(input, bytes.Repeat([]byte{'x'}, docx.Len()), 0600); err != nil {
+		t.Fatal(err)
+	}
+	result, err := SavePortableFromDOCX(t.Context(), output, input, receipt, portable, true)
+	if !errors.Is(err, errDocumentChanged) || result.Installed {
+		t.Fatalf("modified DOCX was admitted: %+v, %v", result, err)
+	}
+	got, err := os.ReadFile(output)
+	if err != nil || string(got) != "portable PDF" {
+		t.Fatalf("previous PDF changed: %q, %v", got, err)
+	}
+}
 
 func TestPortableFontStageUsesVerifiedDOCXAndCleansUp(t *testing.T) {
 	dir := t.TempDir()
