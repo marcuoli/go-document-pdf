@@ -10,7 +10,7 @@ import (
 )
 
 // Retain the exported marked text and object references. A Word Link structure
-// element that now owns a text annotation becomes an Annot structure element.
+// element that now owns a markup comment becomes an Annot structure element.
 func retagNotes(ctx context.Context, pdf *model.Context, parents map[int]struct{}, converted map[types.IndirectRef]struct{}) error {
 	if len(parents) == 0 {
 		return nil

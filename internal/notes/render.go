@@ -1,4 +1,4 @@
-// Package notes converts private renderer links into native PDF text annotations.
+// Package notes converts private renderer links into native PDF markup comments.
 package notes
 
 import (
@@ -41,7 +41,7 @@ func (s Set) Clone() Set {
 }
 
 // Render writes the output of source, replacing each known intermediate link
-// with a nonprinting sticky note at the link's final page position.
+// with a nonprinting markup note at the link's final page position.
 func (s Set) Render(ctx context.Context, w io.Writer, source publication.Source, temporaryDirectory string) (returnedErr error) {
 	if len(s.text) == 0 {
 		return source.Write(ctx, w)
@@ -200,16 +200,20 @@ func linkRectangle(pdf *model.Context, annotation types.Dict) (*types.Rectangle,
 	return box, nil
 }
 
-const noteSize = 7
+const noteSize = 6
 
 func noteRect(box *types.Rectangle) types.Array {
-	return types.NewRectangle(box.UR.X+2, box.UR.Y-noteSize, box.UR.X+2+noteSize, box.UR.Y).Array()
+	// Acrobat can show a comment badge above and to the left of the
+	// markup. Leave room for it beside the status and keep its target
+	// close to the center of the status line.
+	left, top := box.UR.X+10, box.UR.Y-3
+	return types.NewRectangle(left, top-noteSize, left+noteSize, top).Array()
 }
 
 func noteAppearance(pdf *model.Context) (*types.IndirectRef, error) {
-	// A shared appearance keeps the note within its cell. Default viewer
-	// comment icons can be wider and taller than the annotation rectangle.
-	mark := []byte("q .35 G .65 w 1.1 2 m 1.1 6 l 6 6 l 6 2.3 l 3.5 2.3 l 2.1 1 l 2.1 2.3 l h S Q")
+	// A Square markup can display its compact appearance and still expose
+	// a comment. Acrobat substitutes its own larger icon for Text notes.
+	mark := []byte("q .35 G .55 w 1 1.9 m 1 5 l 5 5 l 5 2 l 3 2 l 1.7 .9 l 1.7 2 l h S Q")
 	stream, err := pdf.NewStreamDictForBuf(mark)
 	if err != nil {
 		return nil, err
@@ -231,11 +235,11 @@ func replaceLink(annotation types.Dict, text string, box *types.Rectangle, appea
 			delete(annotation, key)
 		}
 	}
-	annotation.InsertName("Subtype", "Text")
+
+	annotation.InsertName("Type", "Annot")
+	annotation.InsertName("Subtype", "Square")
 	annotation["Rect"] = noteRect(box)
 	annotation["Contents"] = types.NewHexLiteral([]byte(types.EncodeUTF16String(text)))
-	annotation.InsertName("Name", "Comment")
-	annotation["Open"] = types.Boolean(false)
 	annotation["AP"] = types.Dict{"N": *appearance}
 	if hidden {
 		// Retain the Word object's structure reference for tagged fragments.

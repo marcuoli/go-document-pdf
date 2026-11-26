@@ -75,7 +75,7 @@ func TestNativeWordNotesAfterFieldRefresh(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if kind := annotation.NameEntry("Subtype"); kind != nil && *kind == "Text" {
+			if kind := annotation.NameEntry("Subtype"); kind != nil && *kind == "Square" {
 				text, err := annotation.StringOrHexLiteralEntry("Contents")
 				if err != nil || text == nil || *text != tip {
 					t.Fatal("native note did not keep the original explanation", err)

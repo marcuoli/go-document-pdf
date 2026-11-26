@@ -48,7 +48,7 @@ func TestReportScreenTipNotes(t *testing.T) {
 			}
 			if kind := annotation.NameEntry("Subtype"); kind != nil {
 				switch *kind {
-				case "Text":
+				case "Square":
 					notes++
 					text, err := annotation.StringOrHexLiteralEntry("Contents")
 					appearance, appearanceErr := pdf.DereferenceDict(annotation["AP"])

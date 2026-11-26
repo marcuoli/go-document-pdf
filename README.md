@@ -67,6 +67,7 @@ published DOCX. The portable PDF uses the warning glyph's outline and the
 report's text color. Missing faces use the renderer's default fonts.
 
 Structured table cells with standalone ScreenTips produce native PDF pop-up
-notes alongside their rendered text. The PDF reader controls how notes open.
+notes alongside their rendered text. The compact markers are PDF markup comments.
+Select a marker to read its explanation. Acrobat Reader opens it in Comments.
 Word export prepares the generated cell links in a private copy, so the DOCX
 keeps its ScreenTips. Explicit navigation links keep their destinations.
