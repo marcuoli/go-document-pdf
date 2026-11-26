@@ -24,8 +24,9 @@ func SaveFromDOCX(ctx context.Context, outputPath, docxPath string, receipt publ
 }
 
 // SavePortableFromDOCX publishes the portable PDF without invoking Word.
-// It shares the destination checks and verified DOCX font staging used by
-// SaveFromDOCX. The input and output paths must be distinct.
+// It shares the destination checks used by SaveFromDOCX. Structured portable
+// report sources verify the DOCX receipt when staging its embedded fonts.
+// The input and output paths must be distinct.
 func SavePortableFromDOCX(ctx context.Context, outputPath, docxPath string, receipt publication.Receipt, portable publication.Source, overwrite bool) (Receipt, error) {
 	return saveFromDOCX(ctx, outputPath, docxPath, receipt, portable, overwrite, false)
 }
