@@ -38,7 +38,12 @@ func SaveFromDOCX(ctx context.Context, outputPath, docxPath string, receipt publ
 			return Receipt{}, errDOCXDestination
 		}
 	}
-	source := word.PDF(finalizedDOCX{path: input, receipt: receipt}, word.Options{TemporaryDirectory: filepath.Dir(output)})
+	document := finalizedDOCX{path: input, receipt: receipt}
+	directory := filepath.Dir(output)
+	source := word.PDF(document, word.Options{TemporaryDirectory: directory})
+	if portable != nil {
+		portable = portableDOCX{Source: portable, document: document, directory: directory}
+	}
 	return Save(ctx, output, overwrite, Sources{WordPDF: source, PortablePDF: portable})
 }
 

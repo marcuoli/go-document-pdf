@@ -28,7 +28,7 @@ type heading struct {
 func textHTML(text string) string {
 	text = strings.ReplaceAll(text, "\r\n", "\n")
 	text = strings.ReplaceAll(text, "\r", "\n")
-	return strings.ReplaceAll(html.EscapeString(text), "\n", "<br>")
+	return reportMarks.Replace(strings.ReplaceAll(html.EscapeString(text), "\n", "<br>"))
 }
 
 func anchor(name string) string { return html.EscapeString(strings.ToLower(name)) }

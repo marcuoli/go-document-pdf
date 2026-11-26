@@ -60,4 +60,8 @@ for a separate closing page. Sections support paragraphs and external HTTP,
 HTTPS and mail links.
 `SaveFromDOCX` verifies the published DOCX bytes staged for Word. The Office
 automation continues to use the shared Word adapter. PDFs can be published
-independently of any DOCX field-refresh operation.
+independently of any DOCX field-refresh operation. The structured portable
+source uses Segoe UI Symbol for arrows, checks and crosses, and Segoe UI
+Emoji for warnings, when the matching regular faces are embedded in the
+published DOCX. The portable PDF uses the warning glyph's outline and the
+report's text color. Missing faces use the renderer's default fonts.
