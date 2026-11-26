@@ -20,6 +20,17 @@ import (
 // Other hosts use portable, as does Windows if Word is unavailable before
 // writing. The input and output paths must be distinct.
 func SaveFromDOCX(ctx context.Context, outputPath, docxPath string, receipt publication.Receipt, portable publication.Source, overwrite bool) (Receipt, error) {
+	return saveFromDOCX(ctx, outputPath, docxPath, receipt, portable, overwrite, true)
+}
+
+// SavePortableFromDOCX publishes the portable PDF without invoking Word.
+// It shares the destination checks and verified DOCX font staging used by
+// SaveFromDOCX. The input and output paths must be distinct.
+func SavePortableFromDOCX(ctx context.Context, outputPath, docxPath string, receipt publication.Receipt, portable publication.Source, overwrite bool) (Receipt, error) {
+	return saveFromDOCX(ctx, outputPath, docxPath, receipt, portable, overwrite, false)
+}
+
+func saveFromDOCX(ctx context.Context, outputPath, docxPath string, receipt publication.Receipt, portable publication.Source, overwrite, preferWord bool) (Receipt, error) {
 	output, err := filepath.Abs(outputPath)
 	if err != nil {
 		return Receipt{}, err
@@ -40,11 +51,14 @@ func SaveFromDOCX(ctx context.Context, outputPath, docxPath string, receipt publ
 	}
 	document := finalizedDOCX{path: input, receipt: receipt}
 	directory := filepath.Dir(output)
-	source := word.PDFPreservingLinks(docxWithoutScreenTips{document: document, directory: directory}, word.Options{TemporaryDirectory: directory})
-	if portable != nil {
-		portable = portableDOCX{Source: portable, document: document, directory: directory}
+	var sources Sources
+	if preferWord {
+		sources.WordPDF = word.PDFPreservingLinks(docxWithoutScreenTips{document: document, directory: directory}, word.Options{TemporaryDirectory: directory})
 	}
-	return Save(ctx, output, overwrite, Sources{WordPDF: source, PortablePDF: portable})
+	if portable != nil {
+		sources.PortablePDF = portableDOCX{Source: portable, document: document, directory: directory}
+	}
+	return Save(ctx, output, overwrite, sources)
 }
 
 var errDOCXDestination = errors.New("PDF output must differ from the DOCX input")
