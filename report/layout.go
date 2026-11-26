@@ -76,11 +76,15 @@ type Cover struct {
 // from the top of the A4 page. The image keeps its aspect ratio and fits
 // within MaxWidthMM and MaxHeightMM. Alt describes the image. The PNG may
 // contain up to 32 MiB and 16 Mi pixels, with a limit of 16,384 per side.
+// AspectWidth and AspectHeight can supply the original pixel dimensions
+// for layout after resampling has rounded the PNG dimensions. Both zero
+// uses the PNG aspect ratio. Otherwise both dimensions must be positive.
 type CoverLogo struct {
-	PNG                     []byte
-	Alt                     string
-	TopMM                   float64
-	MaxWidthMM, MaxHeightMM float64
+	PNG                       []byte
+	Alt                       string
+	TopMM                     float64
+	MaxWidthMM, MaxHeightMM   float64
+	AspectWidth, AspectHeight int
 }
 
 // Footer supplies the label and two lines of text for numbered pages.
@@ -178,6 +182,9 @@ func centeredCoverLogoHTML(logo *CoverLogo) (string, error) {
 		logo.MaxHeightMM > 0 && logo.MaxHeightMM <= heightMM) {
 		return "", errors.New("centered cover logo has invalid A4 dimensions")
 	}
+	if (logo.AspectWidth != 0 || logo.AspectHeight != 0) && (logo.AspectWidth <= 0 || logo.AspectHeight <= 0) {
+		return "", errors.New("centered cover logo requires two positive original aspect dimensions")
+	}
 	// Match the renderer's image bounds before allocating decoded pixels.
 	const maxPNGBytes, maxPNGSide, maxPNGPixels = 32 << 20, 16_384, 16 << 20
 	if len(logo.PNG) > maxPNGBytes {
@@ -193,9 +200,13 @@ func centeredCoverLogoHTML(logo *CoverLogo) (string, error) {
 	if _, err := png.Decode(bytes.NewReader(logo.PNG)); err != nil {
 		return "", fmt.Errorf("decode centered cover logo: %w", err)
 	}
-	pixelWidth, pixelHeight := float64(config.Width), float64(config.Height)
-	scale := math.Min(logo.MaxWidthMM/pixelWidth, logo.MaxHeightMM/pixelHeight)
-	width, height := pixelWidth*scale, pixelHeight*scale
+	aspectWidth, aspectHeight := config.Width, config.Height
+	if logo.AspectWidth != 0 {
+		aspectWidth, aspectHeight = logo.AspectWidth, logo.AspectHeight
+	}
+	w, h := float64(aspectWidth), float64(aspectHeight)
+	scale := math.Min(logo.MaxWidthMM/w, logo.MaxHeightMM/h)
+	width, height := w*scale, h*scale
 	if height > heightMM-logo.TopMM {
 		return "", errors.New("centered cover logo extends below the A4 cover")
 	}

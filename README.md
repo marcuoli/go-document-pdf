@@ -55,7 +55,9 @@ Import `github.com/marcuoli/go-document-pdf/report` as `report` and
 Supply caller-owned PNGs in the cover, header and footer options when needed.
 Set `Cover.CenteredLogo` to place a second PNG at the page centerline with a
 caller-supplied top position and maximum width and height in millimeters.
-The image is scaled to fit its bounds with its original aspect ratio.
+The image is scaled to fit its bounds with its aspect ratio. After PNG
+resampling, pass the original pixel dimensions in AspectWidth and AspectHeight
+to retain the original physical proportions.
 The structured contents follows the cover and any opening sections, and links
 to the opening and report headings. Use `Options.Opening` for introductory
 sections, `Document.PageBreak` to start a new body page, and `Options.Closing`

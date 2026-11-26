@@ -55,6 +55,28 @@ func TestCenteredCoverLogoFitsAndPreservesPrimaryMark(t *testing.T) {
 	}
 }
 
+func TestCenteredCoverLogoKeepsOriginalAspectAfterDownsampling(t *testing.T) {
+	logo := &CoverLogo{
+		PNG: coverPNG(t, 640, 2), TopMM: 67.2, MaxWidthMM: 30, MaxHeightMM: 30,
+	}
+	for _, test := range []struct {
+		name          string
+		width, height int
+		want          string
+	}{
+		{"PNG default", 0, 0, "width:30.000000mm;height:0.093750mm"},
+		{"original", 4096, 19, "width:30.000000mm;height:0.139160mm"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			logo.AspectWidth, logo.AspectHeight = test.width, test.height
+			got, err := centeredCoverLogoHTML(logo)
+			if err != nil || !strings.Contains(got, test.want) {
+				t.Fatalf("want fitted box %q, got %q with %v", test.want, got, err)
+			}
+		})
+	}
+}
+
 func TestCenteredCoverLogoInvalidInputFailsWrite(t *testing.T) {
 	valid := coverPNG(t, 10, 10)
 	for _, test := range []struct {
@@ -62,6 +84,8 @@ func TestCenteredCoverLogoInvalidInputFailsWrite(t *testing.T) {
 		logo CoverLogo
 	}{
 		{"not PNG", CoverLogo{PNG: []byte("invalid"), TopMM: 67.2, MaxWidthMM: 30, MaxHeightMM: 30}},
+		{"partial aspect", CoverLogo{PNG: valid, MaxWidthMM: 30, MaxHeightMM: 30, AspectWidth: 30}},
+		{"negative aspect", CoverLogo{PNG: valid, MaxWidthMM: 30, MaxHeightMM: 30, AspectWidth: -2, AspectHeight: 1}},
 		{"zero bound", CoverLogo{PNG: valid, MaxHeightMM: 30}},
 		{"infinite bound", CoverLogo{PNG: valid, MaxWidthMM: math.Inf(1), MaxHeightMM: 30}},
 		{"NaN top", CoverLogo{PNG: valid, TopMM: math.NaN(), MaxWidthMM: 30, MaxHeightMM: 30}},
